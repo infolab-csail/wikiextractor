@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import re
-import cgi
+import sys
+if sys.version_info < (3, 2):
+    from cgi import escape as html_escape
+else:
+    from html import escape as html_escape
 from itertools import zip_longest
 import urllib.request
 import urllib.parse
@@ -154,7 +158,7 @@ def clean(extractor, text, expand_templates=False, escape_doc=True):
     text = re.sub(r'\n\W+?\n', '\n', text, flags=re.U)  # lines with only punctuations
     text = text.replace(',,', ',').replace(',.', '.')
     if escape_doc:
-        text = cgi.escape(text)
+        text = html_escape(text, quote=False)
     return text
 
 
