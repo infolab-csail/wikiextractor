@@ -131,9 +131,7 @@ def clean(extractor, text, expand_templates=False, escape_doc=True):
     text = dropSpans(spans, text)
 
     # Drop discarded elements
-    print(text)
     for tag in discardElements:
-        print("   " + tag)
         text = dropNested(text, r'<\s*%s\b[^>/]*>' % tag, r'<\s*/\s*%s>' % tag)
 
     if not extractor.toHTML:
@@ -287,6 +285,7 @@ def dropNested(text, openDelim, closeDelim):
     """
     A matching function for nested expressions, e.g. namespaces and tables.
     """
+    print(text)
     openRE = re.compile(openDelim, re.I)
     closeRE = re.compile(closeDelim, re.I)
     # partition text in separate blocks { } { }
