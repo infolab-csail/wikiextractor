@@ -18,7 +18,7 @@ import time
 
 # match tail after wikilink
 tailRE = re.compile(r'\w+')
-syntaxhighlight = re.compile('&lt;syntaxhighlight .*?&gt;(.*?)&lt;/syntaxhighlight&gt;', re.DOTALL)
+syntaxhighlight = re.compile('&lt;syntaxhighlight .*?&gt;(.*?)&lt;/syntaxhighlight&gt;', re.S)
 
 # PARAMS ####################################################################
 
@@ -285,8 +285,8 @@ def dropNested(text, openDelim, closeDelim):
     """
     A matching function for nested expressions, e.g. namespaces and tables.
     """
-    openRE = re.compile(openDelim, re.IGNORECASE)
-    closeRE = re.compile(closeDelim, re.IGNORECASE)
+    openRE = re.compile(openDelim, re.I)
+    closeRE = re.compile(closeDelim, re.I)
     # partition text in separate blocks { } { }
     spans = []  # pairs (s, e) for each partition
     nest = 0  # nesting level
@@ -729,15 +729,15 @@ def unescape(text):
 
 # Match HTML comments
 # The buggy template {{Template:T}} has a comment terminating with just "->"
-comment = re.compile(r'<!--.*?-->', re.DOTALL)
+comment = re.compile(r'<!--.*?-->', re.S)
 
 # Match ignored tags
 ignored_tag_patterns = []
 
 
 def ignoreTag(tag):
-    left = re.compile(r'<%s\b.*?>' % tag, re.IGNORECASE | re.DOTALL)  # both <ref> and <reference>
-    right = re.compile(r'</\s*%s>' % tag, re.IGNORECASE)
+    left = re.compile(r'<%s\b.*?>' % tag, re.I | re.S)  # both <ref> and <reference>
+    right = re.compile(r'</\s*%s>' % tag, re.I)
     ignored_tag_patterns.append((left, right))
 
 
@@ -751,12 +751,12 @@ for tag in ignoredTags:
 
 # Match selfClosing HTML tags
 selfClosing_tag_patterns = [
-    re.compile(r'<\s*%s\b[^>]*/\s*>' % tag, re.DOTALL | re.IGNORECASE) for tag in selfClosingTags
+    re.compile(r'<\s*%s\b[^>]*/\s*>' % tag, re.S | re.I) for tag in selfClosingTags
 ]
 
 # Match HTML placeholder tags
 placeholder_tag_patterns = [
-    (re.compile(r'<\s*%s(\s*| [^>]+?)>.*?<\s*/\s*%s\s*>' % (tag, tag), re.DOTALL | re.IGNORECASE),
+    (re.compile(r'<\s*%s(\s*| [^>]+?)>.*?<\s*/\s*%s\s*>' % (tag, tag), re.S | re.I),
      repl) for tag, repl in placeholder_tags.items()
 ]
 
@@ -870,7 +870,7 @@ class Extractor(object):
     maxParameterRecursionLevels = 10
 
     # check for template beginning
-    reOpen = re.compile('(?<!{){{(?!{)', re.DOTALL)
+    reOpen = re.compile('(?<!{){{(?!{)', re.S)
 
     def expandTemplates(self, wikitext):
         """
@@ -956,7 +956,7 @@ class Extractor(object):
             # The '=' might occurr within an HTML attribute:
             #   "&lt;ref name=value"
             # but we stop at first.
-            m = re.match(' *([^=]*?) *=(.*)', param, re.DOTALL)
+            m = re.match(' *([^=]*?) *=(.*)', param, re.S)
             if m:
                 # This is a named parameter.  This case also handles parameter
                 # assignments like "2=xxx", where the number of an unnamed
@@ -1042,8 +1042,8 @@ class Extractor(object):
         # {{subst:t|a{{{p|q}}}b}} gives the wikitext start-a{{{p|q}}}b-end
         # @see https://www.mediawiki.org/wiki/Manual:Substitution#Partial_substitution
         subst = False
-        if re.match(substWords, title, re.IGNORECASE):
-            title = re.sub(substWords, '', title, 1, re.IGNORECASE)
+        if re.match(substWords, title, re.I):
+            title = re.sub(substWords, '', title, 1, re.I)
             subst = True
 
         if title.lower() in self.magicWords.values:
@@ -1330,7 +1330,7 @@ def findBalanced(text, openDelim, closeDelim):
     """
     openPat = '|'.join([re.escape(x) for x in openDelim])
     # patter for delimiters expected after each opening delimiter
-    afterPat = {o: re.compile(openPat + '|' + c, re.DOTALL) for o, c in zip(openDelim, closeDelim)}
+    afterPat = {o: re.compile(openPat + '|' + c, re.S) for o, c in zip(openDelim, closeDelim)}
     stack = []
     start = 0
     cur = 0
@@ -1650,8 +1650,8 @@ def callParserFunction(functionName, args, frame):
 # ----------------------------------------------------------------------
 # Extract Template definition
 
-reNoinclude = re.compile(r'<noinclude>(?:.*?)</noinclude>', re.DOTALL)
-reIncludeonly = re.compile(r'<includeonly>|</includeonly>', re.DOTALL)
+reNoinclude = re.compile(r'<noinclude>(?:.*?)</noinclude>', re.S)
+reIncludeonly = re.compile(r'<includeonly>|</includeonly>', re.S)
 
 # These are built before spawning processes, hence thay are shared.
 templates = {}
@@ -1672,7 +1672,7 @@ def define_template(title, page):
     # title = normalizeTitle(title)
 
     # check for redirects
-    m = re.match(r'#REDIRECT.*?\[\[([^\]]*)]]', page[0], re.IGNORECASE)
+    m = re.match(r'#REDIRECT.*?\[\[([^\]]*)]]', page[0], re.I)
     if m:
         redirects[title] = m.group(1)  # normalizeTitle(m.group(1))
         return
@@ -1694,11 +1694,11 @@ def define_template(title, page):
     # eliminate <noinclude> fragments
     text = reNoinclude.sub('', text)
     # eliminate unterminated <noinclude> elements
-    text = re.sub(r'<noinclude\s*>.*$', '', text, flags=re.DOTALL)
+    text = re.sub(r'<noinclude\s*>.*$', '', text, flags=re.S)
     text = re.sub(r'<noinclude/>', '', text)
 
     onlyincludeAccumulator = ''
-    for m in re.finditer('<onlyinclude>(.*?)</onlyinclude>', text, re.DOTALL):
+    for m in re.finditer('<onlyinclude>(.*?)</onlyinclude>', text, re.S):
         onlyincludeAccumulator += m.group(1)
     if onlyincludeAccumulator:
         text = onlyincludeAccumulator
